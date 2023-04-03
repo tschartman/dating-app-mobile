@@ -1,20 +1,12 @@
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, View, TouchableWithoutFeedback } from 'react-native';
 import { Button, TextInput, Provider as PaperProvider, Snackbar, Card } from 'react-native-paper';
 import { useMutation } from 'react-query';
-import axios from 'axios';
 import theme from '../theme';
 import axiosInstance from '../services/axiosInstance';
 
-const lightTheme = {
-  ...theme,
-  colors: {
-    ...theme.colors,
-    text: 'White',
-  },
-};
 
-const RegisterScreen = ({ navigation }) => {
+const RegisterScreen = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [visible, setVisible] = useState(false);
@@ -24,9 +16,16 @@ const RegisterScreen = ({ navigation }) => {
     return response.data;
   };
 
+  const handleDismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
   const mutation = useMutation(registerUser, {
     onSuccess: (data) => {
-      console.log(data)
+      navigation.navigate('Verify', {
+        email: email,
+        phone: phone,
+      })
     },
     onError: (error) => {
       setVisible(true);
@@ -51,53 +50,54 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <PaperProvider theme={theme}>
-      <SafeAreaView style={styles.container}>
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text style={styles.header}>Create Account</Text>
-            <TextInput
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              mode="outlined"
-              textColor='#fff'
-              style={styles.input}
-              theme={lightTheme}
-            />
-            <View style={styles.separatorContainer}>
-              <Text style={styles.separatorText}>Or</Text>
-            </View>
-            <TextInput
-              label="Phone Number"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              autoCapitalize="none"
-              mode="outlined"
-              textColor='#fff'
-              style={styles.input}
-            />
-            <Button mode="contained" onPress={handleRegister}>
-              Register
-            </Button>
-          </Card.Content>
-        </Card>
-        <Snackbar
-          visible={visible}
-          onDismiss={onDismissSnackBar}
-          duration={Snackbar.DURATION_SHORT}
-          action={{
-            label: 'Dismiss',
-            onPress: () => {
-              onDismissSnackBar();
-            },
-          }}
-        >
-          Error Logging in
-        </Snackbar>
-      </SafeAreaView>
+      <TouchableWithoutFeedback onPress={handleDismissKeyboard} accessible={false}>
+        <SafeAreaView style={styles.container}>
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.header}>Create Account</Text>
+              <TextInput
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                mode="outlined"
+                textColor='#fff'
+                style={styles.input}
+              />
+              <View style={styles.separatorContainer}>
+                <Text style={styles.separatorText}>Or</Text>
+              </View>
+              <TextInput
+                label="Phone Number"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                mode="outlined"
+                textColor='#fff'
+                style={styles.input}
+              />
+              <Button mode="contained" onPress={handleRegister}>
+                Register
+              </Button>
+            </Card.Content>
+          </Card>
+          <Snackbar
+            visible={visible}
+            onDismiss={onDismissSnackBar}
+            duration={Snackbar.DURATION_SHORT}
+            action={{
+              label: 'Dismiss',
+              onPress: () => {
+                onDismissSnackBar();
+              },
+            }}
+          >
+            Error Logging in
+          </Snackbar>
+        </SafeAreaView>
+      </TouchableWithoutFeedback>
     </PaperProvider>
   );
 }

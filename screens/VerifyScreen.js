@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, Alert, TouchableWithoutFeedback } from 'react-native';
+import { Button, TextInput, Provider as PaperProvider, Snackbar, Card } from 'react-native-paper';
+
 import { useMutation } from 'react-query';
 import apiClient from '../services/axiosInstance';
 import { useRoute } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
+import { useAuth } from '../context/AuthContext';
 
-export default function VerifyScreen() {
+import theme from '../theme';
+
+export default function VerifyScreen({navigation}) {
   const [verificationToken, setVerificationToken] = useState('');
+  const [visible, setVisible] = useState(false);
+  const { setIsAuthenticated } = useAuth();
 
   const route = useRoute();
   const { email, phone } = route.params;
+  
+  const handleDismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
 
   const verifyUser = async (data) => {
     const response = await apiClient.post('/user/verify-token', data);
@@ -19,10 +30,10 @@ export default function VerifyScreen() {
   const verifyMutation = useMutation(verifyUser, {
     onSuccess: async (data) => {
       await SecureStore.setItemAsync('authToken', data.token);
-      // Navigate to the next screen or update the app state
+      setIsAuthenticated(true)
     },
     onError: (error) => {
-      
+      setVisible(true);
     },
   });
 
@@ -42,34 +53,76 @@ export default function VerifyScreen() {
     }
   };
 
+  const onDismissSnackBar = () => {
+    setVisible(false);
+  };
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ fontSize: 24, marginBottom: 20 }}>Verify Code</Text>
-      <TextInput
-        style={{
-          height: 40,
-          borderColor: 'gray',
-          borderWidth: 1,
-          width: '80%',
-          marginBottom: 20,
-          paddingLeft: 10,
-        }}
-        onChangeText={setVerificationToken}
-        value={verificationToken}
-        keyboardType="numeric"
-        placeholder="Enter Verification Code"
-      />
-      <TouchableOpacity
-        style={{
-          backgroundColor: 'blue',
-          paddingHorizontal: 20,
-          paddingVertical: 10,
-          borderRadius: 5,
-        }}
-        onPress={handleVerify}
-      >
-        <Text style={{ color: 'white', fontWeight: 'bold' }}>Verify</Text>
-      </TouchableOpacity>
-    </View>
+    <PaperProvider theme={theme}>
+      <TouchableWithoutFeedback onPress={handleDismissKeyboard} accessible={false}>
+        <SafeAreaView style={styles.container}>
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.header}>Verify Code</Text>
+              <TextInput
+                style={styles.input}
+                onChangeText={setVerificationToken}
+                value={verificationToken}
+                keyboardType="numeric"
+                placeholder="Enter Verification Code"
+              />
+              <Button mode="contained" onPress={handleVerify}>
+                Verify
+              </Button>
+            </Card.Content>
+          </Card>
+          <Snackbar
+            visible={visible}
+            onDismiss={onDismissSnackBar}
+            duration={Snackbar.DURATION_SHORT}
+            action={{
+              label: 'Dismiss',
+              onPress: () => {
+                onDismissSnackBar();
+              },
+            }}
+          >
+            Error Verifying Code
+          </Snackbar>
+        </SafeAreaView>
+      </TouchableWithoutFeedback>
+    </PaperProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    backgroundColor: '#222',
+  },
+  card: {
+    backgroundColor: '#333',
+    margin: 30
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textAlign: 'center',
+    color: '#fff',
+  },
+  input: {
+    marginBottom: 16,
+  },
+  separatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  separatorText: {
+    color: '#fff',
+  },
+});
